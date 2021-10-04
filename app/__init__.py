@@ -1,28 +1,26 @@
+from app.admin import init_admin_panel
 from app.model.Person import Person
 from flask import Flask
-from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from .model import connect
+from .model import Database
 
-import os
-basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+app.app_context().push()
+database = Database(app)
+database.create_all_tables()
+db = database.connection
 
-app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'flask_boilerplate_main.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+init_admin_panel(db)
 
-db = connect(app)
-
-
-app.config['FLASK_ADMIN_SWATCH'] = 'cerulean'
-admin = Admin(app, name='Msp', template_mode='bootstrap3')
-admin.add_view(ModelView(Person, db.session))
-# admin.add_view(ModelView(Person), db.session)
+@app.route('/create')
+def create():
+    db.create_all()
+    return '<h1>Tables created</h1>'
 
 @app.route('/')
 def root():
+    print(db.get_tables_for_bind())
     return '<h1>Hello world</h1>'
 
 if __name__ == "__main__":
